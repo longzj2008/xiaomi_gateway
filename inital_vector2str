@@ -1,0 +1,9 @@
+from binascii import b2a_hex, a2b_hex
+import sys
+
+s='17996d093d28ddb3ba695a2e6f58562e'    #初始向量
+m=a2b_hex(s)    
+print(m)
+
+#转换后的初始向量
+#b'\x17\x99m\t=(\xdd\xb3\xbaiZ.oXV.'
