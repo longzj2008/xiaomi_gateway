@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+import socket
+import json
+from xm_gw import udp_token_key
+
+
+class udp_gw():
+    def __init__(self, ip_gateway='192.168.8.100'):
+        self.ip_port_zu43 = ('224.0.0.50', 4321)
+        self.ip_port_single = (ip_gateway, 9898)
+        self.ip_port_zu9898=('224.0.0.50', 9898)
+
+    def whois(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+        comd = {'cmd': 'whois'}
+        order = json.dumps(comd)
+        s.sendto(bytes(order, encoding="utf-8"), self.ip_port_zu43)
+        data_bytes, addr = s.recvfrom(1024)
+        data_dic = json.loads(str(data_bytes, encoding='utf-8'))
+        s.close()
+        return data_dic
+
+    def get_id_list(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+        comd = {'cmd': 'get_id_list'}
+        order = json.dumps(comd)
+        s.sendto(bytes(order, encoding="utf-8"), self.ip_port_single)
+        data_bytes, addr = s.recvfrom(1024)
+        data_dic = json.loads(str(data_bytes, encoding='utf-8'))
+        s.close()
+        return data_dic
+
+    def read_sid(self, sid):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+        comd = {'cmd': 'read', 'sid': sid}
+        order = json.dumps(comd)
+        s.sendto(bytes(order, encoding="utf-8"), self.ip_port_single)
+        data_bytes, addr = s.recvfrom(1024)
+        data_dic = json.loads(str(data_bytes, encoding='utf-8'))
+        s.close()
+        return data_dic
+
+    def write_plug(self, status):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+        key_encrypt = udp_token_key.get_token_encrypty()
+        comd = {"cmd": "write", "model": "plug", "sid": "158d0001b84d9a", "short_id": 46384,
+                "data": {"status": status, 'key': key_encrypt}}
+        order = json.dumps(comd)
+        s.sendto(bytes(order, encoding="utf-8"), self.ip_port_single)
+        data_bytes, addr = s.recvfrom(1024)
+        data_dic = json.loads(str(data_bytes, encoding='utf-8'))
+        s.close()
+        return data_dic
+
+    def read_all_sid(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+        ls = json.loads(self.get_id_list().get('data'))
+        ls_sensor_state = []
+        for sid in ls:
+            comd = {'cmd': 'read', 'sid': sid}
+            order = json.dumps(comd)
+            s.sendto(bytes(order, encoding="utf-8"), self.ip_port_single)
+            data_bytes, addr = s.recvfrom(1024)
+            data_dic = json.loads(str(data_bytes, encoding='utf-8'))
+            #            print(data_dic)
+            ls_sensor_state.append(data_dic)
+        s.close()
+        return ls_sensor_state
+
+    def get_dict_model_sid(self):
+        dic_gw=self.whois()
+        ls=self.read_all_sid()
+        dic_model_sid = {}
+        for dic in ls:
+            model = dic.get('model')
+            sid = dic.get('sid')
+            dic_model_sid[model] = sid
+        dic_model_sid['gateway'] = dic_gw.get('sid')
+        return dic_model_sid
+
+
+if __name__=='__main__':
+    import time
+    #{'plug': '158d0001b84d9a', 'switch': '158d0001c10bd7', 'sensor_ht': '158d0001e87bd9',
+    # 'magnet': '158d0001bb3daf', 'motion': '158d0001c2f110', 'gateway': '7811dcb38599'}
+    gw=udp_gw('192.168.31.150')
+    tmp = gw.read_sid('158d0001b84d9a')
+#    print(tmp1)
+#    time.sleep(5)
+#    gw.write_plug('off')
+#    time.sleep(5)
+#    tmp=gw.read_sid('158d0001b84d9a')
+
+    print(tmp)
