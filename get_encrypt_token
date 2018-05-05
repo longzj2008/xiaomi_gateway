@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import socket
+import json
+from xm_gw.encrypty import prpcrypt
+
+def get_token():    #通过get_id_list 获得token
+    ip_port_single = ("192.168.31.150", 9898)
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+    comd = {'cmd': 'get_id_list'}
+    order = json.dumps(comd)
+    s.sendto(bytes(order, encoding="utf-8"), ip_port_single)
+    data,addr=s.recvfrom(1024)
+    data_str=str(data,encoding='utf-8')
+    token=json.loads(data_str).get('token')
+    s.close()
+    return token
+
+def get_token_encrypty():
+    tok = get_token()  # 拿到当前token,要进行加密的内容
+    k = prpcrypt()
+    key_encrypt = k.encrypt(tok)
+    return key_encrypt
+
+if __name__=='__main__':
+    tok=get_token()
+    tok_encry=get_token_encrypty()
+    print(tok)
+    print(tok_encry)
